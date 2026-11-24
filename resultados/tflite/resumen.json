@@ -1,0 +1,60 @@
+{
+  "modelo_keras": "resultados/fine_tuning/modelo_fine_tuning.keras",
+  "cuantizacion": "float16",
+  "tflite_mb": 6.55,
+  "keras_mb": 33.0,
+  "ms_por_imagen_cpu": 2.1,
+  "hilos": 4,
+  "entrada": {
+    "forma": [
+      1,
+      224,
+      224,
+      3
+    ],
+    "tipo": "float32"
+  },
+  "salida": {
+    "forma": [
+      1,
+      8
+    ],
+    "tipo": "float32"
+  },
+  "comparacion": {
+    "val": {
+      "n_imagenes": 1864,
+      "misma_clase_que_keras": 0.9995,
+      "imagenes_con_otra_clase": 1,
+      "dif_max_probabilidad": 0.0605,
+      "keras": {
+        "accuracy": 0.9496,
+        "f1_macro": 0.9475,
+        "mcc": 0.9408
+      },
+      "tflite": {
+        "accuracy": 0.9496,
+        "f1_macro": 0.9475,
+        "mcc": 0.9408,
+        "accuracy_contenedor": 0.9861
+      }
+    },
+    "test": {
+      "n_imagenes": 1865,
+      "misma_clase_que_keras": 0.9989,
+      "imagenes_con_otra_clase": 2,
+      "dif_max_probabilidad": 0.0412,
+      "keras": {
+        "accuracy": 0.9469,
+        "f1_macro": 0.9459,
+        "mcc": 0.9377
+      },
+      "tflite": {
+        "accuracy": 0.9469,
+        "f1_macro": 0.9461,
+        "mcc": 0.9377,
+        "accuracy_contenedor": 0.9828
+      }
+    }
+  }
+}

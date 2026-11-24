@@ -20,6 +20,8 @@ equipo de Makers (estructura física y microcontroladores).
 | `src/fine_tuning.py` | Fine-tuning: descongela las últimas capas con lr bajo (etapa 2, paso 2) |
 | `src/evaluar.py` | Métricas de un modelo guardado: accuracy, F1, MCC, por clase y por contenedor |
 | `src/curvas.py` | Lectura del historial y gráfica de error por época |
+| `src/exportar_tflite.py` | Convierte el modelo final a TFLite y lo compara con Keras |
+| `src/inferir.py` | Clasifica fotos con el `.tflite`; no necesita TensorFlow |
 | `notebooks/prueba_redes.ipynb` | Corre la prueba corta en Colab con GPU |
 | `entorno/` | Versiones fijas y script para crear el entorno con GPU en WSL2/Linux |
 | `resultados/` | Métricas y gráficas que se suben al repo (los modelos `.keras`/`.tflite` no) |
@@ -238,6 +240,42 @@ requieren manejo especial.
 
 ![Matriz de confusión de 8 clases en test](resultados/fine_tuning/matriz_confusion_test.png)
 ![Matriz de confusión de 3 contenedores en test](resultados/fine_tuning/matriz_confusion_contenedor_test.png)
+
+## Exportar a TFLite e inferencia
+
+```bash
+python src/exportar_tflite.py                    # float16 por defecto
+python src/inferir.py foto.jpg                   # clase, probabilidad y contenedor
+python src/inferir.py fotos/*.jpg --json         # una línea JSON por foto
+```
+
+`exportar_tflite.py` convierte `resultados/fine_tuning/modelo_fine_tuning.keras`
+y deja en `resultados/tflite/` el `modelo.tflite` (no se sube a git),
+`etiquetas.json` (clases, contenedores y cómo preparar la entrada) y
+`resumen.json`. Antes de guardar el resumen pasa las mismas imágenes de val y
+test por Keras y por TFLite y compara la clase predicha:
+
+| `--cuantizacion` | Tamaño | ms/imagen (CPU, 4 hilos) | Clase distinta a Keras (val / test) | Accuracy test |
+|---|---:|---:|---:|---:|
+| **`float16`** (por defecto) | 6.6 MB | 2.1 | 1 / 2 | 0.947 |
+| `dinamica` (int8) | 3.6 MB | 4.8 | 24 / 26 | 0.943 |
+| `ninguna` (float32) | 12.9 MB | 2.2 | 0 / 0 | 0.947 |
+
+Los tiempos son de una laptop x86 y sirven para comparar formatos, no son el
+tiempo en la placa del módulo.
+
+`inferir.py` prepara la imagen igual que en el entrenamiento: la abre y la
+convierte a **RGB**, la redimensiona a 224x224 (bilineal, sin recortar) y la
+pasa como float32 en **0-255, sin dividir entre 255** (MobileNetV3 normaliza por
+dentro; dividiendo entre 255 el modelo responde `cardboard` para todo). Solo
+necesita numpy, Pillow y un intérprete de TFLite (`ai_edge_litert`,
+`tflite_runtime` o TensorFlow), así que para la placa basta copiar
+`inferir.py`, `modelo.tflite` y `etiquetas.json`. Con OpenCV hay que convertir
+de BGR a RGB antes de pasarle la imagen.
+
+Verificado en las 1,865 imágenes de test: leyendo los archivos con Pillow la
+accuracy es 0.946, contra 0.947 con la preparación de TensorFlow; 8 imágenes
+cambian de clase por diferencias mínimas al decodificar y redimensionar.
 
 ## Modelo viejo
 

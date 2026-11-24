@@ -1,0 +1,35 @@
+{
+  "clases": [
+    "battery",
+    "biological",
+    "cardboard",
+    "glass",
+    "metal",
+    "paper",
+    "plastic",
+    "trash"
+  ],
+  "clases_a_contenedores": {
+    "battery": "inorganico_no_reciclable",
+    "biological": "organico",
+    "cardboard": "inorganico_reciclable",
+    "glass": "inorganico_reciclable",
+    "metal": "inorganico_reciclable",
+    "paper": "inorganico_reciclable",
+    "plastic": "inorganico_reciclable",
+    "trash": "inorganico_no_reciclable"
+  },
+  "entrada": {
+    "alto": 224,
+    "ancho": 224,
+    "canales": 3,
+    "orden_canales": "RGB",
+    "tipo": "float32",
+    "rango": [
+      0,
+      255
+    ],
+    "normalizacion": "ninguna: NO dividir entre 255; el modelo normaliza por dentro"
+  },
+  "salida": "probabilidades (softmax) en el orden de 'clases'"
+}
