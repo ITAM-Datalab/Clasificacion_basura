@@ -117,7 +117,7 @@ def guardar(filas: list[dict], dir_datos: Path) -> None:
 
     filas = sorted(filas, key=lambda f: f["ruta"])
     with open(dir_datos / "splits.csv", "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=["ruta", "clase", "particion",
+        w = csv.DictWriter(f, lineterminator="\n", fieldnames=["ruta", "clase", "particion",
                                           "ancho", "alto"])
         w.writeheader()
         w.writerows(filas)
@@ -140,7 +140,7 @@ def guardar(filas: list[dict], dir_datos: Path) -> None:
     conteo = Counter((f["clase"], f["particion"]) for f in filas)
     with open(dir_datos / "resumen_split.csv", "w", newline="",
               encoding="utf-8") as f:
-        w = csv.writer(f)
+        w = csv.writer(f, lineterminator="\n")
         w.writerow(["clase", "contenedor", "train", "val", "test", "total"])
         for c in CLASES:
             n = [conteo[(c, p)] for p in ("train", "val", "test")]

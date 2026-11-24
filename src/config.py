@@ -30,3 +30,6 @@ TAM_IMAGEN = (224, 224)
 
 DIR_IMAGENES = Path("data/imagenes")  # imágenes extraídas, no van a git
 DIR_DATOS = Path("datos")             # splits y json, sí van a git
+
+# Red elegida en la prueba corta (ver README, "Elegir la red preentrenada").
+BASE_ELEGIDA = "MobileNetV3Large"

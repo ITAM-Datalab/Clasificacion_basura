@@ -71,7 +71,28 @@ validación el F1 macro, el F1 de biological, la exactitud por contenedor y el
 tiempo y tamaño en TensorFlow Lite. Los resultados quedan en
 `resultados/prueba_redes/`.
 
-**Red elegida:** _pendiente_
+### Resultados (validación, base congelada, 8 épocas)
+
+| Red | F1 macro | F1 biological | Acc. contenedor | TFLite (MB) | TFLite (ms/img, CPU) | Min. entrenamiento (CPU) |
+|---|---:|---:|---:|---:|---:|---:|
+| **MobileNetV3Large** | 0.916 | **0.974** | 0.975 | **3.6** | **6.6** | **9.3** |
+| EfficientNetB0 | **0.922** | 0.970 | **0.976** | 4.9 | 7.7 | 15.0 |
+
+F1 por clase en `resultados/prueba_redes/f1_por_clase.csv` y curvas en
+`resultados/prueba_redes/curvas_*.png`. Los tiempos se midieron en un CPU de 4
+núcleos con TFLite cuantizado (rango dinámico): sirven para comparar las redes,
+no son el tiempo real en la placa del módulo.
+
+**Red elegida: MobileNetV3Large.** La diferencia de F1 macro es de 0.006, menor
+que el umbral de 0.02 que fijamos para considerarla relevante. Con el criterio
+de desempate, MobileNetV3Large gana: tiene mejor F1 en biological (la clase más
+débil), es un 27 % más chica, es un 14 % más rápida en TFLite y entrena en
+casi la mitad del tiempo. Como la placa del módulo aún no está definida, conviene
+la opción más ligera. EfficientNetB0 fue mejor en cardboard, paper y trash, así
+que queda como alternativa si el fine-tuning de MobileNetV3Large se estanca.
+
+En ambas redes la pérdida de validación seguía bajando en la época 8, así que
+la etapa 2 (más épocas y fine-tuning) tiene margen de mejora.
 
 ## Modelo viejo
 

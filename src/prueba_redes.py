@@ -147,12 +147,13 @@ def main() -> None:
     columnas = [k for k in resultados[0] if k != "f1_por_clase"]
     with open(args.salida / "resumen.csv", "w", newline="",
               encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=columnas, extrasaction="ignore")
+        w = csv.DictWriter(f, fieldnames=columnas, extrasaction="ignore",
+                           lineterminator="\n")
         w.writeheader()
         w.writerows(resultados)
     with open(args.salida / "f1_por_clase.csv", "w", newline="",
               encoding="utf-8") as f:
-        w = csv.writer(f)
+        w = csv.writer(f, lineterminator="\n")
         w.writerow(["clase", *args.bases])
         for c in CLASES:
             w.writerow([c, *[r["f1_por_clase"][c] for r in resultados]])
