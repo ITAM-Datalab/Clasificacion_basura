@@ -1,0 +1,7 @@
+# Entrada para generar demo/requirements.txt (lo usa GitHub Actions).
+# Sin TensorFlow: la inferencia usa el intérprete ligero de TFLite, como en
+# la placa del módulo. scikit-learn lo necesita src/preparar_datos.py.
+numpy
+pillow
+scikit-learn
+ai-edge-litert

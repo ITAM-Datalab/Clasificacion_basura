@@ -1,0 +1,88 @@
+# Construye y publica el demo del clasificador en GitHub Pages.
+#
+# 1. Descarga la versión 8 del dataset de Kaggle (queda en caché).
+# 2. Extrae las imágenes con src/preparar_datos.py y verifica que el split
+#    sea idéntico a datos/splits.csv.
+# 3. Clasifica las fotos de test con src/inferir.py y modelo.tflite
+#    (con ai-edge-litert, sin TensorFlow) y arma el sitio con demo/construir.py.
+# 4. Publica el sitio en GitHub Pages.
+#
+# Corre al subir cambios que afectan al demo, o a mano desde la pestaña
+# Actions ("Run workflow").
+
+name: Demo en GitHub Pages
+
+on:
+  push:
+    branches: [main, tflite]
+    paths:
+      - "demo/**"
+      - "src/inferir.py"
+      - "src/preparar_datos.py"
+      - "src/config.py"
+      - "resultados/tflite/**"
+      - "datos/splits.csv"
+      - ".github/workflows/demo.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  construir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias (versiones fijas)
+        run: pip install --require-hashes -r demo/requirements.txt
+
+      - name: Dataset en caché
+        id: cache-dataset
+        uses: actions/cache@v6
+        with:
+          path: Datasets/2025-05-10_archive.zip
+          key: dataset-garbage-classification-v2-version-8
+
+      - name: Descargar dataset de Kaggle (versión 8)
+        if: steps.cache-dataset.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p Datasets
+          curl -fL --retry 3 -o Datasets/2025-05-10_archive.zip \
+            "https://www.kaggle.com/api/v1/datasets/download/sumn2u/garbage-classification-v2?datasetVersionNumber=8"
+
+      - name: Extraer imágenes y verificar el split
+        run: |
+          python src/preparar_datos.py --datos /tmp/datos_ci > /tmp/preparar.log
+          tail -n 12 /tmp/preparar.log
+          cmp datos/splits.csv /tmp/datos_ci/splits.csv
+          echo "El split generado es idéntico a datos/splits.csv"
+
+      - name: Clasificar fotos de test y construir el sitio
+        run: python demo/construir.py --salida sitio
+
+      - uses: actions/configure-pages@v6
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: sitio
+
+  publicar:
+    needs: construir
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v5

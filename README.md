@@ -22,6 +22,8 @@ equipo de Makers (estructura física y microcontroladores).
 | `src/curvas.py` | Lectura del historial y gráfica de error por época |
 | `src/exportar_tflite.py` | Convierte el modelo final a TFLite y lo compara con Keras |
 | `src/inferir.py` | Clasifica fotos con el `.tflite`; no necesita TensorFlow |
+| `demo/` | Demo web: elige fotos por contenedor y clase y ve qué responde el modelo |
+| `.github/workflows/demo.yml` | Construye el demo y lo publica en GitHub Pages |
 | `notebooks/prueba_redes.ipynb` | Corre la prueba corta en Colab con GPU |
 | `entorno/` | Versiones fijas y script para crear el entorno con GPU en WSL2/Linux |
 | `resultados/` | Métricas y gráficas que se suben al repo (los modelos `.keras`/`.tflite` no) |
@@ -276,6 +278,30 @@ de BGR a RGB antes de pasarle la imagen.
 Verificado en las 1,865 imágenes de test: leyendo los archivos con Pillow la
 accuracy es 0.946, contra 0.947 con la preparación de TensorFlow; 8 imágenes
 cambian de clase por diferencias mínimas al decodificar y redimensionar.
+
+## Demo
+
+**[itam-datalab.github.io/Clasificacion_basura](https://itam-datalab.github.io/Clasificacion_basura/)**
+
+Muestra las 1,865 fotos de test (que el modelo no vio al entrenar) con lo que
+respondió el modelo final en TFLite. Se filtra por contenedor, por clase y por
+aciertos o errores, y al elegir una foto se ven las probabilidades de las 8
+clases y si el error cambia de contenedor. Los filtros quedan en la URL, así que
+se puede compartir una vista, por ejemplo
+[las baterías mal clasificadas](https://itam-datalab.github.io/Clasificacion_basura/#clase=battery&mostrar=errores).
+
+Lo construye y publica `.github/workflows/demo.yml` cada vez que cambian el
+demo, el modelo o `inferir.py`, o a mano desde la pestaña Actions. El workflow
+descarga el dataset (con caché), verifica que el split sea idéntico a
+`datos/splits.csv`, clasifica las fotos con `inferir.py` usando `ai-edge-litert`
+(sin TensorFlow, como en la placa) y sube el sitio a Pages.
+
+Para verlo en local, después de `preparar_datos.py` y `exportar_tflite.py`:
+
+```bash
+python demo/construir.py
+python -m http.server -d sitio 8000    # y abrir http://localhost:8000
+```
 
 ## Modelo viejo
 

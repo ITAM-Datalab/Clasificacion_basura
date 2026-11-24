@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clasificador de residuos · demo</title>
+<style>
+  :root {
+    color-scheme: light;
+    --fondo: #fcfcfb;
+    --tarjeta: #ffffff;
+    --borde: #e4e3df;
+    --tinta: #0b0b0b;
+    --tinta-2: #52514e;
+    --tinta-3: #77766f;
+    --riel: #efeeea;
+    --organico: #1baf7a;
+    --reciclable: #2a78d6;
+    --no-reciclable: #eb6834;
+    --bien: #006300;
+    --mal: #d03b3b;
+    --foco: #2a78d6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --fondo: #1a1a19;
+      --tarjeta: #232322;
+      --borde: #3a3a37;
+      --tinta: #f0efec;
+      --tinta-2: #c3c2b7;
+      --tinta-3: #9a9990;
+      --riel: #2e2e2c;
+      --organico: #199e70;
+      --reciclable: #3987e5;
+      --no-reciclable: #d95926;
+      --bien: #0ca30c;
+      --mal: #e66767;
+      --foco: #3987e5;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--fondo); color: var(--tinta);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  header, main, footer { max-width: 1240px; margin: 0 auto; padding: 0 20px; }
+  header { padding-top: 28px; }
+  h1 { font-size: 24px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .sub { color: var(--tinta-2); margin: 0 0 20px; max-width: 760px; }
+
+  .filtros { display: grid; gap: 10px; margin-bottom: 16px; }
+  .fila { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .etiqueta { width: 92px; color: var(--tinta-2); font-size: 13px; }
+  .fila > .fila { flex: 1 1 0; min-width: 0; }
+  button {
+    font: inherit; color: var(--tinta); background: var(--tarjeta);
+    border: 1px solid var(--borde); border-radius: 999px;
+    padding: 5px 12px; cursor: pointer; display: inline-flex;
+    align-items: center; gap: 7px;
+  }
+  button:hover { border-color: var(--tinta-3); }
+  button:focus-visible { outline: 2px solid var(--foco); outline-offset: 2px; }
+  button[aria-pressed="true"] {
+    background: var(--tinta); color: var(--fondo); border-color: var(--tinta);
+  }
+  .punto { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .cuenta { color: var(--tinta-3); font-size: 13px; }
+  button[aria-pressed="true"] .cuenta { color: inherit; opacity: .75; }
+  .acciones { display: flex; align-items: center; gap: 12px; margin: 4px 0 14px; }
+  .resumen { color: var(--tinta-2); font-size: 14px; }
+  .resumen b { color: var(--tinta); }
+
+  .cuerpo { display: grid; grid-template-columns: 1fr 380px; gap: 20px; align-items: start; }
+  .cuerpo > * { min-width: 0; }
+  .rejilla {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+  }
+  .foto {
+    padding: 0; border-radius: 10px; overflow: hidden; display: block;
+    text-align: left; background: var(--tarjeta); width: 100%;
+  }
+  .foto[aria-pressed="true"] {
+    background: var(--tarjeta); color: var(--tinta);
+    outline: 2px solid var(--foco); outline-offset: 1px; border-color: var(--foco);
+  }
+  .foto img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--riel); }
+  .foto .pie { padding: 6px 8px 8px; font-size: 13px; display: grid; gap: 1px; }
+  .estado { font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+  .estado.bien { color: var(--bien); }
+  .estado.mal { color: var(--mal); }
+  .real { color: var(--tinta-3); font-size: 12px; }
+  .vacio { color: var(--tinta-2); padding: 40px 0; }
+
+  .detalle {
+    position: sticky; top: 16px; background: var(--tarjeta);
+    border: 1px solid var(--borde); border-radius: 14px; padding: 16px;
+  }
+  .detalle img { width: 100%; border-radius: 10px; display: block; background: var(--riel); }
+  .detalle h2 { font-size: 18px; margin: 12px 0 2px; }
+  .linea { display: flex; align-items: center; gap: 7px; color: var(--tinta-2); font-size: 14px; margin: 3px 0; }
+  .veredicto { margin: 10px 0 14px; padding: 8px 10px; border-radius: 8px; background: var(--riel); font-size: 14px; }
+  .barras { display: grid; gap: 7px; }
+  .barra { display: grid; grid-template-columns: 96px 1fr 52px; gap: 8px; align-items: center; font-size: 13px; }
+  .barra .riel { height: 10px; background: var(--riel); border-radius: 5px; overflow: hidden; }
+  .barra .valor { height: 100%; border-radius: 5px; }
+  .barra .pct { text-align: right; font-variant-numeric: tabular-nums; color: var(--tinta-2); }
+  .barra.real-marca .nombre { font-weight: 600; }
+  .nota { color: var(--tinta-3); font-size: 12px; margin-top: 12px; }
+
+  footer { color: var(--tinta-3); font-size: 13px; padding-top: 28px; padding-bottom: 28px; }
+  footer a { color: inherit; }
+
+  @media (max-width: 900px) {
+    .cuerpo { grid-template-columns: 1fr; }
+    .detalle { position: static; order: -1; }
+    .etiqueta { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Clasificador de residuos</h1>
+  <p class="sub" id="sub">Cargando…</p>
+</header>
+
+<main>
+  <section class="filtros" aria-label="Filtros">
+    <div class="fila" role="group" aria-label="Contenedor">
+      <span class="etiqueta">Contenedor</span><span id="f-contenedor" class="fila"></span>
+    </div>
+    <div class="fila" role="group" aria-label="Clase">
+      <span class="etiqueta">Clase</span><span id="f-clase" class="fila"></span>
+    </div>
+    <div class="fila" role="group" aria-label="Mostrar">
+      <span class="etiqueta">Mostrar</span><span id="f-resultado" class="fila"></span>
+    </div>
+  </section>
+
+  <div class="acciones">
+    <button id="otras" type="button">↻ Otras fotos</button>
+    <span class="resumen" id="resumen" aria-live="polite"></span>
+  </div>
+
+  <div class="cuerpo">
+    <section class="rejilla" id="rejilla" aria-label="Fotos"></section>
+    <aside class="detalle" id="detalle" aria-live="polite">
+      <p class="vacio">Elige una foto para ver qué respondió el modelo.</p>
+    </aside>
+  </div>
+</main>
+
+<footer id="pie"></footer>
+
+<script>
+const POR_PAGINA = 24;
+const NOMBRES = {
+  battery: "Batería", biological: "Biológico", cardboard: "Cartón",
+  glass: "Vidrio", metal: "Metal", paper: "Papel", plastic: "Plástico",
+  trash: "Basura",
+};
+const CONTENEDORES = [
+  { id: "organico", nombre: "Orgánico", color: "var(--organico)" },
+  { id: "inorganico_reciclable", nombre: "Inorgánico reciclable", color: "var(--reciclable)" },
+  { id: "inorganico_no_reciclable", nombre: "Inorgánico no reciclable", color: "var(--no-reciclable)" },
+];
+const contenedor = id => CONTENEDORES.find(c => c.id === id);
+
+let datos, fotos = [];
+const estado = { contenedor: null, clase: null, resultado: "todas", muestra: [], elegida: null };
+
+function el(etiqueta, atributos = {}, ...hijos) {
+  const n = document.createElement(etiqueta);
+  for (const [k, v] of Object.entries(atributos)) {
+    if (k === "class") n.className = v;
+    else if (k === "style") n.style.cssText = v;
+    else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+    else n.setAttribute(k, v);
+  }
+  for (const h of hijos) if (h != null) n.append(h);
+  return n;
+}
+const pct = p => (p * 100).toFixed(p >= 0.995 || p < 0.001 ? 0 : 1) + " %";
+const punto = color => el("span", { class: "punto", style: `background:${color}`, "aria-hidden": "true" });
+const nombreClase = i => `${NOMBRES[datos.clases[i]]} (${datos.clases[i]})`;
+const contDe = i => datos.contenedores[datos.clases[i]];
+
+function boton(texto, activo, alHacerClic, extra = {}) {
+  const { color, cuenta } = extra;
+  return el("button", { type: "button", "aria-pressed": String(activo), onclick: alHacerClic },
+    color ? punto(color) : null, texto,
+    cuenta != null ? el("span", { class: "cuenta" }, String(cuenta)) : null);
+}
+
+// Fotos que cumplen contenedor y clase (sin el filtro de aciertos/errores)
+function base() {
+  return fotos.filter(f =>
+    (!estado.contenedor || contDe(f.real) === estado.contenedor) &&
+    (estado.clase == null || f.real === estado.clase));
+}
+function filtradas() {
+  const b = base();
+  if (estado.resultado === "aciertos") return b.filter(f => f.acierto);
+  if (estado.resultado === "errores") return b.filter(f => !f.acierto);
+  return b;
+}
+
+function barajar() {
+  const lista = filtradas().slice();
+  for (let i = lista.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [lista[i], lista[j]] = [lista[j], lista[i]];
+  }
+  estado.muestra = lista.slice(0, POR_PAGINA);
+}
+
+function pintarFiltros() {
+  const fc = document.getElementById("f-contenedor");
+  fc.replaceChildren(
+    boton("Todos", !estado.contenedor, () => elegirContenedor(null), { cuenta: fotos.length }),
+    ...CONTENEDORES.map(c => boton(c.nombre, estado.contenedor === c.id, () => elegirContenedor(c.id),
+      { color: c.color, cuenta: fotos.filter(f => contDe(f.real) === c.id).length })));
+
+  const orden = id => CONTENEDORES.findIndex(c => c.id === id);
+  const clases = datos.clases.map((_, i) => i)
+    .filter(i => !estado.contenedor || contDe(i) === estado.contenedor)
+    .sort((a, b) => orden(contDe(a)) - orden(contDe(b)) ||
+                    NOMBRES[datos.clases[a]].localeCompare(NOMBRES[datos.clases[b]], "es"));
+  document.getElementById("f-clase").replaceChildren(
+    boton("Todas", estado.clase == null, () => elegirClase(null)),
+    ...clases.map(i => boton(NOMBRES[datos.clases[i]], estado.clase === i, () => elegirClase(i),
+      { color: contenedor(contDe(i)).color, cuenta: fotos.filter(f => f.real === i).length })));
+
+  const b = base(), errores = b.filter(f => !f.acierto).length;
+  document.getElementById("f-resultado").replaceChildren(
+    boton("Todas", estado.resultado === "todas", () => elegirResultado("todas"), { cuenta: b.length }),
+    boton("✓ Aciertos", estado.resultado === "aciertos", () => elegirResultado("aciertos"), { cuenta: b.length - errores }),
+    boton("✗ Errores", estado.resultado === "errores", () => elegirResultado("errores"), { cuenta: errores }));
+
+  const n = b.length, ok = n - errores;
+  const okCont = b.filter(f => contDe(f.pred) === contDe(f.real)).length;
+  const resumen = document.getElementById("resumen");
+  resumen.replaceChildren();
+  if (n) resumen.append(
+    "Con estos filtros: ", el("b", {}, `${n} fotos`),
+    ` · clase correcta en ${pct(ok / n)} · contenedor correcto en ${pct(okCont / n)}`);
+}
+
+function estadoFoto(f) {
+  if (f.acierto) return el("span", { class: "estado bien" }, "✓ ", NOMBRES[datos.clases[f.pred]]);
+  return el("span", { class: "estado mal" }, "✗ ", NOMBRES[datos.clases[f.pred]]);
+}
+
+function pintarRejilla() {
+  const r = document.getElementById("rejilla");
+  if (!estado.muestra.length) {
+    r.replaceChildren(el("p", { class: "vacio" }, "No hay fotos con estos filtros."));
+    return;
+  }
+  r.replaceChildren(...estado.muestra.map(f =>
+    el("button", {
+      type: "button", class: "foto", "aria-pressed": String(estado.elegida === f),
+      "aria-label": `Foto de ${NOMBRES[datos.clases[f.real]]}; el modelo dijo ${NOMBRES[datos.clases[f.pred]]}`,
+      onclick: () => elegirFoto(f),
+    },
+      el("img", { src: f.ruta, alt: "", loading: "lazy" }),
+      el("span", { class: "pie" },
+        estadoFoto(f),
+        el("span", { class: "real" }, `Real: ${NOMBRES[datos.clases[f.real]]}`)))));
+}
+
+function pintarDetalle() {
+  const d = document.getElementById("detalle");
+  const f = estado.elegida;
+  if (!f) {
+    d.replaceChildren(el("p", { class: "vacio" }, "Elige una foto para ver qué respondió el modelo."));
+    return;
+  }
+  const cReal = contenedor(contDe(f.real)), cPred = contenedor(contDe(f.pred));
+  let veredicto;
+  if (f.acierto) veredicto = el("div", { class: "veredicto" },
+    el("span", { class: "estado bien" }, "✓ Correcto"), ` · va a ${cPred.nombre.toLowerCase()}`);
+  else if (cReal === cPred) veredicto = el("div", { class: "veredicto" },
+    el("span", { class: "estado mal" }, "✗ Clase equivocada"),
+    ", pero el contenedor es el correcto (", cPred.nombre.toLowerCase(), ")");
+  else veredicto = el("div", { class: "veredicto" },
+    el("span", { class: "estado mal" }, "✗ Contenedor equivocado"),
+    `: iría a ${cPred.nombre.toLowerCase()} en lugar de ${cReal.nombre.toLowerCase()}`);
+
+  const orden = f.probs.map((p, i) => [p, i]).sort((a, b) => b[0] - a[0]);
+  d.replaceChildren(
+    el("img", { src: f.ruta, alt: `Foto de ${NOMBRES[datos.clases[f.real]]}` }),
+    el("h2", {}, `${NOMBRES[datos.clases[f.pred]]} · ${pct(f.probs[f.pred])}`),
+    el("div", { class: "linea" }, punto(cPred.color), `Predicción: ${nombreClase(f.pred)} → ${cPred.nombre}`),
+    el("div", { class: "linea" }, punto(cReal.color), `Real: ${nombreClase(f.real)} → ${cReal.nombre}`),
+    veredicto,
+    el("div", { class: "barras", role: "list", "aria-label": "Probabilidad de cada clase" },
+      ...orden.map(([p, i]) => el("div", { class: "barra" + (i === f.real ? " real-marca" : ""), role: "listitem" },
+        el("span", { class: "nombre" }, NOMBRES[datos.clases[i]] + (i === f.real ? " (real)" : "")),
+        el("span", { class: "riel" },
+          el("span", { class: "valor", style: `display:block;width:${(p * 100).toFixed(2)}%;background:${contenedor(contDe(i)).color}` })),
+        el("span", { class: "pct" }, pct(p))))),
+    el("p", { class: "nota" }, "El color de cada barra es el contenedor de esa clase. " +
+      "El modelo clasificó la foto original; aquí se muestra una miniatura."));
+}
+
+function guardarEnUrl() {
+  const q = new URLSearchParams();
+  if (estado.contenedor) q.set("contenedor", estado.contenedor);
+  if (estado.clase != null) q.set("clase", datos.clases[estado.clase]);
+  if (estado.resultado !== "todas") q.set("mostrar", estado.resultado);
+  history.replaceState(null, "", q.toString() ? "#" + q : location.pathname);
+}
+function leerDeUrl() {
+  const q = new URLSearchParams(location.hash.slice(1));
+  const c = q.get("contenedor"), cl = datos.clases.indexOf(q.get("clase")), m = q.get("mostrar");
+  if (contenedor(c)) estado.contenedor = c;
+  if (cl >= 0) { estado.clase = cl; estado.contenedor = contDe(cl); }
+  if (["aciertos", "errores"].includes(m)) estado.resultado = m;
+}
+
+function refrescar(nuevaMuestra = true) {
+  if (nuevaMuestra) barajar();
+  guardarEnUrl();
+  if (estado.elegida && !filtradas().includes(estado.elegida)) estado.elegida = null;
+  if (!estado.elegida) estado.elegida = estado.muestra[0] || null;
+  pintarFiltros(); pintarRejilla(); pintarDetalle();
+}
+function elegirContenedor(id) { estado.contenedor = id; estado.clase = null; estado.elegida = null; refrescar(); }
+function elegirClase(i) { estado.clase = i; estado.elegida = null; refrescar(); }
+function elegirResultado(r) { estado.resultado = r; estado.elegida = null; refrescar(); }
+function elegirFoto(f) { estado.elegida = f; pintarRejilla(); pintarDetalle(); }
+
+document.getElementById("otras").addEventListener("click", () => { estado.elegida = null; refrescar(); });
+
+fetch("datos.json").then(r => r.json()).then(d => {
+  datos = d;
+  fotos = d.fotos.map(f => {
+    const pred = f.probs.indexOf(Math.max(...f.probs));
+    return { ...f, pred, acierto: pred === f.real };
+  });
+  leerDeUrl();
+  const particion = d.particion === "test" ? "de test, que el modelo no vio al entrenar" : `de ${d.particion}`;
+  document.getElementById("sub").textContent =
+    `${fotos.length} fotos ${particion}, clasificadas por el modelo final ` +
+    `(MobileNetV3Large en TFLite ${d.modelo.cuantizacion ?? ""}). ` +
+    `Acierta la clase en ${pct(d.accuracy)} y el contenedor en ${pct(d.accuracy_contenedor)}.`;
+  const pie = document.getElementById("pie");
+  pie.append(`Generado por GitHub Actions el ${d.generado}`);
+  if (d.repositorio) {
+    pie.append(" desde ");
+    pie.append(el("a", { href: `https://github.com/${d.repositorio}/commit/${d.commit}` }, d.commit));
+    pie.append(" · ");
+    pie.append(el("a", { href: `https://github.com/${d.repositorio}` }, "código en GitHub"));
+  }
+  pie.append(". Fotos: Garbage Classification V2 (Suman Kunwar, Kaggle, licencia MIT).");
+  refrescar();
+}).catch(() => {
+  document.getElementById("sub").textContent = "No se pudo cargar datos.json.";
+});
+</script>
+</body>
+</html>
