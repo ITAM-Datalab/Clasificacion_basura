@@ -1,0 +1,9 @@
+clase,contenedor,train,val,test,total
+battery,inorganico_no_reciclable,661,141,142,944
+biological,organico,698,150,149,997
+cardboard,inorganico_reciclable,1277,274,274,1825
+glass,inorganico_reciclable,2142,459,460,3061
+metal,inorganico_reciclable,714,153,153,1020
+paper,inorganico_reciclable,1176,252,252,1680
+plastic,inorganico_reciclable,1389,298,297,1984
+trash,inorganico_no_reciclable,663,142,142,947

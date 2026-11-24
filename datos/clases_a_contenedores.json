@@ -1,0 +1,10 @@
+{
+  "battery": "inorganico_no_reciclable",
+  "biological": "organico",
+  "cardboard": "inorganico_reciclable",
+  "glass": "inorganico_reciclable",
+  "metal": "inorganico_reciclable",
+  "paper": "inorganico_reciclable",
+  "plastic": "inorganico_reciclable",
+  "trash": "inorganico_no_reciclable"
+}
