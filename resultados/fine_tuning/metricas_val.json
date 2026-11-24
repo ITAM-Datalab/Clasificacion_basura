@@ -1,0 +1,11 @@
+{
+  "n_imagenes": 1864,
+  "accuracy": 0.9496,
+  "f1_macro": 0.9475,
+  "mcc": 0.9408,
+  "contenedor": {
+    "accuracy": 0.9861,
+    "f1_macro": 0.9803,
+    "mcc": 0.9636
+  }
+}

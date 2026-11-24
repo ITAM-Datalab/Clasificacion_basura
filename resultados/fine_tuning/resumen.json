@@ -1,0 +1,17 @@
+{
+  "modelo_base": "resultados/base_congelada/modelo_base_congelada.keras",
+  "capas_descongeladas": 48,
+  "parametros_entrenables": 2414288,
+  "lr": 1e-05,
+  "batch": 32,
+  "paciencia": 4,
+  "epocas_corridas": 30,
+  "epocas_maximas": 30,
+  "paro_por_early_stopping": false,
+  "val_loss_partida": 0.2298,
+  "mejoro_sobre_partida": true,
+  "mejor_epoca": 28,
+  "mejor_val_loss": 0.1844,
+  "val_accuracy_mejor_epoca": 0.9496,
+  "min_entrenamiento": 6.7
+}
