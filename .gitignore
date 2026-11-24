@@ -1,0 +1,21 @@
+# Dataset original (780 MB, pasa el límite de GitHub)
+Datasets/
+*.zip
+
+# Imágenes extraídas por src/preparar_datos.py
+data/
+
+# Python / Jupyter
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Modelos de la prueba corta (pesados, no se suben)
+resultados/**/*.keras
+resultados/**/*.tflite
