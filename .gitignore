@@ -19,6 +19,11 @@ Thumbs.db
 # Modelos de la prueba corta (pesados, no se suben)
 resultados/**/*.keras
 resultados/**/*.tflite
+# El modelo final sí se sube: lo usan el demo (GitHub Actions) y la placa
+!resultados/tflite/modelo.tflite
 
 # Ajustes personales del editor
 .vscode/
+
+# Sitio del demo construido en local (demo/construir.py)
+sitio/
