@@ -4,6 +4,8 @@ Clasifica cada foto de una partición (test por defecto: fotos que el modelo
 no vio al entrenar) con src/inferir.py y modelo.tflite, y escribe en --salida:
 
     index.html    la página del demo (copia de demo/index.html)
+    modelo.tflite el mismo modelo, para clasificar en el navegador (LiteRT.js)
+                  las fotos que suba quien use el demo
     datos.json    clases, contenedores y, por foto, la clase real y las
                   probabilidades que dio el modelo
     fotos/        miniaturas JPEG para mostrar (el modelo clasifica la
@@ -85,6 +87,8 @@ def main() -> None:
     cont = np.array([clf.contenedores[c] for c in clf.clases])
     with open(args.modelo.with_name("resumen.json"), encoding="utf-8") as f:
         resumen_tflite = json.load(f)
+    with open(args.modelo.with_name("etiquetas.json"), encoding="utf-8") as f:
+        entrada = json.load(f)["entrada"]
 
     datos = {
         "generado": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
@@ -93,6 +97,7 @@ def main() -> None:
         "particion": args.particion,
         "modelo": {"cuantizacion": resumen_tflite.get("cuantizacion"),
                    "mb": resumen_tflite.get("tflite_mb")},
+        "entrada": {"alto": entrada["alto"], "ancho": entrada["ancho"]},
         "clases": clf.clases,
         "contenedores": clf.contenedores,
         "accuracy": round(float((real == pred).mean()), 4),
@@ -103,6 +108,8 @@ def main() -> None:
     with open(args.salida / "datos.json", "w", encoding="utf-8") as f:
         json.dump(datos, f, ensure_ascii=False, separators=(",", ":"))
     shutil.copy(Path(__file__).with_name("index.html"), args.salida)
+    # Para clasificar en el navegador las fotos que suba la gente.
+    shutil.copy(args.modelo, args.salida / "modelo.tflite")
 
     print(f"{len(fotos)} fotos de {args.particion}: accuracy "
           f"{datos['accuracy']:.4f}, por contenedor "

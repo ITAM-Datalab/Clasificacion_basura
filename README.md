@@ -266,6 +266,9 @@ test por Keras y por TFLite y compara la clase predicha:
 Los tiempos son de una laptop x86 y sirven para comparar formatos, no son el
 tiempo en la placa del módulo.
 
+El `.tflite` tiene la entrada con lote fijo `[1, 224, 224, 3]` (una foto a la
+vez), porque LiteRT.js en el navegador exige la forma exacta.
+
 `inferir.py` prepara la imagen igual que en el entrenamiento: la abre y la
 convierte a **RGB**, la redimensiona a 224x224 (bilineal, sin recortar) y la
 pasa como float32 en **0-255, sin dividir entre 255** (MobileNetV3 normaliza por
@@ -284,11 +287,24 @@ cambian de clase por diferencias mínimas al decodificar y redimensionar.
 **[itam-datalab.github.io/Clasificacion_basura](https://itam-datalab.github.io/Clasificacion_basura/)**
 
 Muestra las 1,865 fotos de test (que el modelo no vio al entrenar) con lo que
-respondió el modelo final en TFLite. Se filtra por contenedor, por clase y por
-aciertos o errores, y al elegir una foto se ven las probabilidades de las 8
-clases y si el error cambia de contenedor. Los filtros quedan en la URL, así que
-se puede compartir una vista, por ejemplo
-[las baterías mal clasificadas](https://itam-datalab.github.io/Clasificacion_basura/#clase=battery&mostrar=errores).
+respondió el modelo final en TFLite:
+
+- **Evaluar por contenedor (por defecto) o por clase:** define qué cuenta como
+  acierto. Por contenedor, una botella de vidrio predicha como plástico es un
+  acierto, porque va al mismo contenedor; por clase, es un error.
+- **Filtros** por contenedor, por clase y por aciertos o errores. Al elegir una
+  foto se ven las probabilidades de las 8 clases y el veredicto.
+- **Probar con tu foto:** se elige o arrastra una foto (en el celular, también
+  con la cámara) y se clasifica en el navegador con el mismo `modelo.tflite`,
+  usando [LiteRT.js](https://www.npmjs.com/package/@litertjs/core). La foto no
+  sale del navegador. Opcionalmente se indica qué es en realidad para ver el
+  veredicto. La preparación replica la de `inferir.py` (RGB, 224x224 con el
+  bilineal de Pillow, 0-255 sin dividir entre 255): en 200 fotos la clase
+  coincide en las 200 y las probabilidades difieren a lo mucho 0.004.
+
+Los filtros quedan en la URL para compartir una vista, por ejemplo
+[las baterías que van al contenedor equivocado](https://itam-datalab.github.io/Clasificacion_basura/#clase=battery&mostrar=errores)
+o [los errores de clase en reciclables](https://itam-datalab.github.io/Clasificacion_basura/#evaluar=clase&contenedor=inorganico_reciclable&mostrar=errores).
 
 Lo construye y publica `.github/workflows/demo.yml` cada vez que cambian el
 demo, el modelo o `inferir.py`, o a mano desde la pestaña Actions. El workflow
