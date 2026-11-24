@@ -21,59 +21,23 @@ Resultados en `resultados/base_congelada/`:
     historial.csv                 loss, accuracy, val_loss y val_accuracy por época
     curva_error.png               error de train y val contra las épocas
     resumen.json                  mejor época y sus métricas
+    metricas_val.json, por_clase_val.csv, matriz_confusion_val.csv
+                                  métricas del checkpoint en validación,
+                                  incluido MCC (ver src/evaluar.py)
 """
 
 import argparse
-import csv
 import json
 import time
 from pathlib import Path
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
-from tensorflow import keras  # noqa: E402
+from tensorflow import keras
 
-from config import BASE_ELEGIDA, DIR_DATOS, DIR_IMAGENES  # noqa: E402
-from modelo import (callbacks, construir_modelo, crear_dataset,  # noqa: E402
+from config import BASE_ELEGIDA, DIR_DATOS, DIR_IMAGENES
+from curvas import graficar_error, leer_historial
+from evaluar import evaluar
+from modelo import (callbacks, construir_modelo, crear_dataset,
                     leer_class_weights)
-
-
-def leer_historial(ruta: Path) -> dict[str, list[float]]:
-    """Lee el CSV que escribe CSVLogger: una fila por época."""
-    with open(ruta, encoding="utf-8") as f:
-        filas = list(csv.DictReader(f))
-    return {col: [float(fila[col]) for fila in filas]
-            for col in filas[0] if col != "epoch"}
-
-
-def graficar_error(historia: dict, mejor_epoca: int, paciencia: int,
-                   nombre: str, ruta: Path) -> None:
-    """Error de train y val contra las épocas, marcando la mejor época."""
-    epocas = range(1, len(historia["loss"]) + 1)
-    mejor_val = historia["val_loss"][mejor_epoca - 1]
-
-    fig, eje = plt.subplots(figsize=(8, 5))
-    eje.plot(epocas, historia["loss"], marker="o", ms=3, label="train")
-    eje.plot(epocas, historia["val_loss"], marker="o", ms=3,
-             label="validación")
-    eje.axvline(mejor_epoca, color="gray", ls="--", lw=1)
-    eje.scatter([mejor_epoca], [mejor_val], s=80, zorder=3, color="black",
-                label=f"checkpoint (época {mejor_epoca}, "
-                      f"val_loss={mejor_val:.4f})")
-    ultima = len(historia["loss"])
-    if ultima > mejor_epoca:  # épocas de paciencia sin mejora
-        eje.axvspan(mejor_epoca, ultima, color="gray", alpha=0.12,
-                    label=f"sin mejora (paciencia {paciencia})")
-    eje.set_title(f"{nombre}, base congelada: error por época")
-    eje.set_xlabel("época")
-    eje.set_ylabel("error (categorical cross-entropy)")
-    eje.xaxis.set_major_locator(plt.MaxNLocator(integer=True))
-    eje.grid(alpha=0.3)
-    eje.legend()
-    fig.tight_layout()
-    fig.savefig(ruta, dpi=120)
-    plt.close(fig)
 
 
 def main() -> None:
@@ -126,7 +90,8 @@ def main() -> None:
     epocas_corridas = len(val_loss)
     paro_temprano = epocas_corridas < args.epocas
 
-    graficar_error(historia, mejor_epoca, args.paciencia, args.base,
+    graficar_error(historia, mejor_epoca, args.paciencia,
+                   f"{args.base}, base congelada: error por época",
                    args.salida / "curva_error.png")
 
     resumen = {
@@ -154,7 +119,11 @@ def main() -> None:
               f"mejoró en las últimas {args.paciencia}; el modelo quizá "
               "seguía mejorando. Considera subir --epocas.")
     print(f"\nCheckpoint (época {mejor_epoca}): {ruta_modelo}")
-    print(f"Archivos en {args.salida}/")
+
+    # Se evalúa el archivo del checkpoint (no el modelo en memoria), así las
+    # métricas corresponden exactamente a lo que usará el fine-tuning.
+    evaluar(ruta_modelo, "val", args.salida, **kw)
+    print(f"\nArchivos en {args.salida}/")
 
 
 if __name__ == "__main__":
