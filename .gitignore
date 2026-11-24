@@ -19,3 +19,6 @@ Thumbs.db
 # Modelos de la prueba corta (pesados, no se suben)
 resultados/**/*.keras
 resultados/**/*.tflite
+
+# Ajustes personales del editor
+.vscode/
