@@ -139,6 +139,11 @@ def main() -> None:
         json.dump(resumen, f, indent=2, ensure_ascii=False)
     print(json.dumps(resumen, indent=2, ensure_ascii=False))
 
+    if (epocas_corridas == args.epocas
+            and epocas_corridas - mejor < args.paciencia):
+        print(f"\nAVISO: llegó al máximo de {args.epocas} épocas y val_loss "
+              f"mejoró en las últimas {args.paciencia}; el modelo quizá "
+              "seguía mejorando. Considera subir --epocas.")
     if not mejoro:
         print(f"\nEl fine-tuning no bajó el val_loss de partida "
               f"({val_loss_partida:.4f}); no se guardó modelo. El de "
