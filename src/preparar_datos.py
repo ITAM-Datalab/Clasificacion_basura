@@ -4,8 +4,12 @@ Parte del zip de Kaggle (Garbage Classification V2) y:
   1. Extrae solo las 8 clases que separa el módulo (descarta clothes y shoes).
   2. Abre cada imagen con Pillow, la pasa a RGB y la guarda como JPEG real.
      Esto corrige los archivos WebP que vienen con extensión .jpg.
-  3. Hace la partición 70/15/15 estratificada con semilla fija.
-  4. Guarda en `datos/`:
+  3. Resuelve nombres repetidos: el zip trae pares como `glass_20241.jpg` y
+     `glass_20241.png` que irían al mismo `glass_20241.jpg`. Si son la misma
+     foto se conserva solo la primera; si son fotos distintas la segunda se
+     guarda como `glass_20241(1).jpg`.
+  4. Hace la partición 70/15/15 estratificada con semilla fija.
+  5. Guarda en `datos/`:
        - splits.csv                  ruta, clase, particion, ancho, alto
        - clases.json                 orden de clases (índice -> nombre)
        - clases_a_contenedores.json  mapeo de 8 clases a 3 contenedores
@@ -37,12 +41,36 @@ from config import (CLASES, CLASES_A_CONTENEDORES, CLASES_DESCARTADAS,
 
 EXTENSIONES = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
 
+# Dos imágenes con el mismo nombre se consideran la misma foto si tienen el
+# mismo tamaño y la diferencia promedio por píxel (escala 0-255) es menor a
+# este umbral. En el zip, los 30 pares .jpg/.png difieren entre 0.2 y 3.2,
+# solo por la compresión JPEG; fotos distintas difieren decenas de unidades.
+UMBRAL_MISMA_FOTO = 8.0
+
+
+def misma_foto(a: Image.Image, b: Image.Image) -> bool:
+    if a.size != b.size:
+        return False
+    dif = np.abs(np.asarray(a, np.int16) - np.asarray(b, np.int16))
+    return float(dif.mean()) < UMBRAL_MISMA_FOTO
+
+
+def ruta_libre(salida: Path, usadas: set) -> Path:
+    """`nombre(1).jpg`, `nombre(2).jpg`, ... el primero que no se haya usado."""
+    n = 1
+    while (nueva := salida.with_name(f"{salida.stem}({n}){salida.suffix}")) in usadas:
+        n += 1
+    return nueva
+
 
 def extraer_imagenes(ruta_zip: Path, destino: Path) -> list[dict]:
     """Extrae y normaliza las imágenes de las clases que se usan."""
     filas = []
     convertidas = []
     ilegibles = []
+    duplicadas = []   # misma foto con otro formato: no se guarda
+    renombradas = []  # foto distinta con el mismo nombre: se guarda como (n)
+    usadas = set()    # rutas de salida ya escritas en esta corrida
     descartadas = Counter()
 
     with zipfile.ZipFile(ruta_zip) as zf:
@@ -69,6 +97,15 @@ def extraer_imagenes(ruta_zip: Path, destino: Path) -> list[dict]:
                 continue
 
             salida = destino / clase / (p.stem + ".jpg")
+            if salida in usadas:
+                with Image.open(salida) as previa:
+                    igual = misma_foto(previa.convert("RGB"), img)
+                if igual:
+                    duplicadas.append(nombre)
+                    continue
+                salida = ruta_libre(salida, usadas)
+                renombradas.append(f"{nombre} -> {salida.name}")
+            usadas.add(salida)
             salida.parent.mkdir(parents=True, exist_ok=True)
             if formato == "JPEG" and p.suffix.lower() in {".jpg", ".jpeg"}:
                 salida.write_bytes(datos)  # sin recomprimir
@@ -89,6 +126,15 @@ def extraer_imagenes(ruta_zip: Path, destino: Path) -> list[dict]:
     if convertidas:
         print(f"Convertidas a JPEG ({len(convertidas)}):")
         for c in convertidas:
+            print(f"  {c}")
+    if duplicadas:
+        print(f"Duplicadas, no se guardan ({len(duplicadas)}):")
+        for c in duplicadas:
+            print(f"  {c}")
+    if renombradas:
+        print(f"Mismo nombre pero foto distinta, renombradas "
+              f"({len(renombradas)}):")
+        for c in renombradas:
             print(f"  {c}")
     if ilegibles:
         print(f"No se pudieron leer ({len(ilegibles)}):")
