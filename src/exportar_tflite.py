@@ -44,7 +44,14 @@ from modelo import crear_dataset
 
 
 def convertir(modelo: keras.Model, cuantizacion: str) -> bytes:
-    conv = tf.lite.TFLiteConverter.from_keras_model(modelo)
+    # Lote fijo de 1: la entrada queda [1, 224, 224, 3] y no [-1, 224, 224, 3].
+    # LiteRT.js (el demo en el navegador) exige la forma exacta, y en la placa
+    # siempre se clasifica una foto a la vez.
+    # (from_concrete_functions perdía los pesos: modelo de 0.2 MB que no
+    # acertaba nada; envolver el modelo en uno con batch_size=1 sí funciona.)
+    entrada = keras.Input(shape=(*TAM_IMAGEN, 3), batch_size=1, name="imagen")
+    fijo = keras.Model(entrada, modelo(entrada, training=False))
+    conv = tf.lite.TFLiteConverter.from_keras_model(fijo)
     if cuantizacion in ("dinamica", "float16"):
         conv.optimizations = [tf.lite.Optimize.DEFAULT]
     if cuantizacion == "float16":

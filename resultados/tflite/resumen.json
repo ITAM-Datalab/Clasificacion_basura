@@ -1,7 +1,7 @@
 {
   "modelo_keras": "resultados/fine_tuning/modelo_fine_tuning.keras",
   "cuantizacion": "float16",
-  "tflite_mb": 6.55,
+  "tflite_mb": 6.56,
   "keras_mb": 33.0,
   "ms_por_imagen_cpu": 2.1,
   "hilos": 4,
@@ -26,7 +26,7 @@
       "n_imagenes": 1864,
       "misma_clase_que_keras": 0.9995,
       "imagenes_con_otra_clase": 1,
-      "dif_max_probabilidad": 0.0605,
+      "dif_max_probabilidad": 0.0563,
       "keras": {
         "accuracy": 0.9496,
         "f1_macro": 0.9475,
@@ -43,7 +43,7 @@
       "n_imagenes": 1865,
       "misma_clase_que_keras": 0.9989,
       "imagenes_con_otra_clase": 2,
-      "dif_max_probabilidad": 0.0412,
+      "dif_max_probabilidad": 0.0413,
       "keras": {
         "accuracy": 0.9469,
         "f1_macro": 0.9459,
