@@ -195,10 +195,17 @@ Los dos scripts de entrenamiento lo corren solos al terminar. Evalúa en
 validación (test se reserva para el modelo final) y guarda junto al modelo:
 
 - `metricas_val.json`: accuracy, F1 macro y **MCC** con las 8 clases y con los
-  3 contenedores;
+  3 contenedores, y F1 de cada contenedor;
 - `por_clase_val.csv`: precisión, recall, F1 y MCC de cada clase contra el
   resto;
-- `matriz_confusion_val.csv`: filas = clase real, columnas = predicha.
+- `matriz_confusion_val.csv` / `.png`: 8 clases, filas = clase real, columnas =
+  predicha;
+- `matriz_confusion_contenedor_val.csv` / `.png`: lo mismo con los 3
+  contenedores.
+
+En las imágenes el color es el porcentaje de la clase real (para comparar
+clases de distinto tamaño) y el número de cada celda es el conteo. Para test:
+`--particion test`.
 
 **MCC** (coeficiente de correlación de Matthews) va de -1 a 1: 1 es predicción
 perfecta y 0 equivale a adivinar. Usa toda la matriz de confusión, así que no
@@ -208,6 +215,29 @@ dijera `glass` tendría 25 % de accuracy pero MCC de 0.
 Entre corridas en GPU la accuracy puede variar en una o dos imágenes (unas
 cuantas imágenes quedan casi empatadas entre dos clases y la GPU no hace las
 operaciones exactamente en el mismo orden cada vez).
+
+## Resultados del modelo final
+
+Modelo: MobileNetV3Large con fine-tuning de las últimas 48 capas
+(`resultados/fine_tuning/`). Test se evaluó una sola vez, con el modelo ya
+elegido en validación.
+
+| | Base congelada (val) | Fine-tuning (val) | **Fine-tuning (test)** |
+|---|---:|---:|---:|
+| Accuracy, 8 clases | 0.921 | 0.950 | **0.947** |
+| F1 macro, 8 clases | 0.917 | 0.948 | **0.946** |
+| MCC, 8 clases | 0.907 | 0.941 | **0.938** |
+| Accuracy, 3 contenedores | 0.972 | 0.986 | **0.983** |
+| MCC, 3 contenedores | 0.929 | 0.964 | **0.955** |
+
+F1 por clase en test: biological 0.983, battery 0.975, glass 0.961, cardboard
+0.953, paper 0.952, plastic 0.919, metal 0.914, trash 0.910. La confusión más
+frecuente es vidrio predicho como plástico (20 de 458). De 141 baterías, 4 se
+predicen como metal o plástico e irían al contenedor de reciclables, aunque
+requieren manejo especial.
+
+![Matriz de confusión de 8 clases en test](resultados/fine_tuning/matriz_confusion_test.png)
+![Matriz de confusión de 3 contenedores en test](resultados/fine_tuning/matriz_confusion_contenedor_test.png)
 
 ## Modelo viejo
 

@@ -1,0 +1,9 @@
+clase,contenedor,precision,recall,f1,mcc,soporte
+battery,inorganico_no_reciclable,0.9786,0.9716,0.9751,0.9731,141
+biological,organico,0.9737,0.9933,0.9834,0.982,149
+cardboard,inorganico_reciclable,0.946,0.9599,0.9529,0.9448,274
+glass,inorganico_reciclable,0.9774,0.9454,0.9612,0.949,458
+metal,inorganico_reciclable,0.8655,0.9673,0.9136,0.9071,153
+paper,inorganico_reciclable,0.9672,0.9365,0.9516,0.9444,252
+plastic,inorganico_reciclable,0.9164,0.9226,0.9195,0.9042,297
+trash,inorganico_no_reciclable,0.9203,0.9007,0.9104,0.9032,141
