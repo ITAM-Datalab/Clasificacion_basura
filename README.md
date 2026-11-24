@@ -17,6 +17,9 @@ equipo de Makers (estructura física y microcontroladores).
 | `src/modelo.py` | Carga de datos (tf.data), aumento y armado del modelo; lo usan ambas etapas |
 | `src/prueba_redes.py` | Prueba corta para elegir la red preentrenada |
 | `src/entrenar_base_congelada.py` | Entrenamiento completo con la base congelada (etapa 2, paso 1) |
+| `src/fine_tuning.py` | Fine-tuning: descongela las últimas capas con lr bajo (etapa 2, paso 2) |
+| `src/evaluar.py` | Métricas de un modelo guardado: accuracy, F1, MCC, por clase y por contenedor |
+| `src/curvas.py` | Lectura del historial y gráfica de error por época |
 | `notebooks/prueba_redes.ipynb` | Corre la prueba corta en Colab con GPU |
 | `entorno/` | Versiones fijas y script para crear el entorno con GPU en WSL2/Linux |
 | `resultados/` | Métricas y gráficas que se suben al repo (los modelos `.keras`/`.tflite` no) |
@@ -154,8 +157,57 @@ python src/entrenar_base_congelada.py --epocas 80
 
 Resultados en `resultados/base_congelada/`: `historial.csv` (error y accuracy
 por época, se escribe al terminar cada época), `curva_error.png` (error contra
-épocas, con la mejor época marcada) y `resumen.json`. El `.keras` no se sube
-a git.
+épocas, con la mejor época marcada), `resumen.json` y las métricas del
+checkpoint en validación (ver "Evaluar un modelo"). El `.keras` no se sube a
+git.
+
+## Fine-tuning
+
+Parte del checkpoint de la base congelada, descongela las últimas capas de
+MobileNetV3Large con `descongelar_ultimas` (las BatchNormalization siguen
+congeladas) y las reentrena con una tasa de aprendizaje baja.
+
+```bash
+python src/fine_tuning.py                        # 48 capas, lr 1e-5, paciencia 4
+python src/fine_tuning.py --capas 33 --lr 1e-5
+```
+
+- `--capas` cuenta desde el final de la base (187 capas). 18, 33 y 48 cortan
+  justo entre bloques; 48 (por defecto) descongela toda la última etapa
+  (bloques 12 a 14 y la convolución final, ~2.4 M de parámetros).
+- `--lr` 1e-5 por defecto, 100 veces menor que en la base congelada, para
+  ajustar los pesos de ImageNet sin borrarlos.
+- Antes de entrenar mide el `val_loss` del modelo de partida, y el checkpoint
+  solo se guarda si el fine-tuning lo supera. Si nunca lo supera, no se guarda
+  modelo y el de la base congelada sigue siendo el mejor.
+- La gráfica marca con una línea el `val_loss` de partida para comparar.
+
+Resultados en `resultados/fine_tuning/`, con los mismos archivos que la etapa
+anterior.
+
+## Evaluar un modelo
+
+```bash
+python src/evaluar.py --modelo resultados/base_congelada/modelo_base_congelada.keras
+```
+
+Los dos scripts de entrenamiento lo corren solos al terminar. Evalúa en
+validación (test se reserva para el modelo final) y guarda junto al modelo:
+
+- `metricas_val.json`: accuracy, F1 macro y **MCC** con las 8 clases y con los
+  3 contenedores;
+- `por_clase_val.csv`: precisión, recall, F1 y MCC de cada clase contra el
+  resto;
+- `matriz_confusion_val.csv`: filas = clase real, columnas = predicha.
+
+**MCC** (coeficiente de correlación de Matthews) va de -1 a 1: 1 es predicción
+perfecta y 0 equivale a adivinar. Usa toda la matriz de confusión, así que no
+se infla con clases desbalanceadas como la accuracy: un modelo que siempre
+dijera `glass` tendría 25 % de accuracy pero MCC de 0.
+
+Entre corridas en GPU la accuracy puede variar en una o dos imágenes (unas
+cuantas imágenes quedan casi empatadas entre dos clases y la GPU no hace las
+operaciones exactamente en el mismo orden cada vez).
 
 ## Modelo viejo
 
