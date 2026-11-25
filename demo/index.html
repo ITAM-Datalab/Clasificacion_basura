@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clasificador de residuos · demo</title>
+<style>
+  :root {
+    color-scheme: light;
+    --fondo: #fcfcfb;
+    --tarjeta: #ffffff;
+    --borde: #e4e3df;
+    --tinta: #0b0b0b;
+    --tinta-2: #52514e;
+    --tinta-3: #77766f;
+    --riel: #efeeea;
+    --organico: #1baf7a;
+    --reciclable: #2a78d6;
+    --no-reciclable: #eb6834;
+    --bien: #006300;
+    --mal: #d03b3b;
+    --foco: #2a78d6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --fondo: #1a1a19;
+      --tarjeta: #232322;
+      --borde: #3a3a37;
+      --tinta: #f0efec;
+      --tinta-2: #c3c2b7;
+      --tinta-3: #9a9990;
+      --riel: #2e2e2c;
+      --organico: #199e70;
+      --reciclable: #3987e5;
+      --no-reciclable: #d95926;
+      --bien: #0ca30c;
+      --mal: #e66767;
+      --foco: #3987e5;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--fondo); color: var(--tinta);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  header, main, footer { max-width: 1240px; margin: 0 auto; padding: 0 20px; }
+  header { padding-top: 28px; }
+  h1 { font-size: 24px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .sub { color: var(--tinta-2); margin: 0 0 20px; max-width: 760px; }
+
+  .subir {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;
+    border: 1px dashed var(--borde); border-radius: 12px; padding: 12px 14px;
+    margin-bottom: 18px; background: var(--tarjeta);
+  }
+  .subir.arrastrando { border-color: var(--foco); outline: 2px solid var(--foco); }
+  .subir p { margin: 0; color: var(--tinta-2); font-size: 14px; flex: 1 1 260px; }
+  .subir input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; }
+
+  .filtros { display: grid; gap: 10px; margin-bottom: 16px; }
+  .fila { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .etiqueta { width: 92px; color: var(--tinta-2); font-size: 13px; }
+  .fila > .fila { flex: 1 1 0; min-width: 0; }
+  button, .boton {
+    font: inherit; color: var(--tinta); background: var(--tarjeta);
+    border: 1px solid var(--borde); border-radius: 999px;
+    padding: 5px 12px; cursor: pointer; display: inline-flex;
+    align-items: center; gap: 7px;
+  }
+  button:hover, .boton:hover { border-color: var(--tinta-3); }
+  button:focus-visible, .boton:focus-within { outline: 2px solid var(--foco); outline-offset: 2px; }
+  button[aria-pressed="true"], .boton.principal {
+    background: var(--tinta); color: var(--fondo); border-color: var(--tinta);
+  }
+  .punto { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .cuenta { color: var(--tinta-3); font-size: 13px; }
+  button[aria-pressed="true"] .cuenta { color: inherit; opacity: .75; }
+  .acciones { display: flex; align-items: center; gap: 12px; margin: 4px 0 14px; }
+  .resumen { color: var(--tinta-2); font-size: 14px; }
+  .resumen b { color: var(--tinta); }
+
+  .cuerpo { display: grid; grid-template-columns: 1fr 380px; gap: 20px; align-items: start; }
+  .cuerpo > * { min-width: 0; }
+  .rejilla {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+  }
+  .foto {
+    padding: 0; border-radius: 10px; overflow: hidden; display: block;
+    text-align: left; background: var(--tarjeta); width: 100%;
+  }
+  .foto[aria-pressed="true"] {
+    background: var(--tarjeta); color: var(--tinta);
+    outline: 2px solid var(--foco); outline-offset: 1px; border-color: var(--foco);
+  }
+  .foto img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--riel); }
+  .foto .pie { padding: 6px 8px 8px; font-size: 13px; display: grid; gap: 1px; }
+  .estado { font-weight: 600; }
+  .estado.bien { color: var(--bien); }
+  .estado.mal { color: var(--mal); }
+  .real { color: var(--tinta-3); font-size: 12px; }
+  .vacio { color: var(--tinta-2); padding: 40px 0; }
+
+  .detalle {
+    position: sticky; top: 16px; background: var(--tarjeta);
+    border: 1px solid var(--borde); border-radius: 14px; padding: 16px;
+  }
+  .detalle img { width: 100%; border-radius: 10px; display: block; background: var(--riel); max-height: 420px; object-fit: contain; }
+  .detalle h2 { font-size: 18px; margin: 12px 0 2px; }
+  .etiqueta-vivo { display: inline-block; font-size: 12px; font-weight: 600; color: var(--tinta-2); border: 1px solid var(--borde); border-radius: 999px; padding: 1px 8px; margin-top: 10px; }
+  .linea { display: flex; align-items: center; gap: 7px; color: var(--tinta-2); font-size: 14px; margin: 3px 0; }
+  .linea select { font: inherit; color: var(--tinta); background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 6px; padding: 2px 4px; }
+  .veredicto { margin: 10px 0 14px; padding: 8px 10px; border-radius: 8px; background: var(--riel); font-size: 14px; }
+  .barras { display: grid; gap: 7px; margin-top: 12px; }
+  .barra { display: grid; grid-template-columns: 96px 1fr 52px; gap: 8px; align-items: center; font-size: 13px; }
+  .barra .riel { height: 10px; background: var(--riel); border-radius: 5px; overflow: hidden; }
+  .barra .valor { display: block; height: 100%; border-radius: 5px; }
+  .barra .pct { text-align: right; font-variant-numeric: tabular-nums; color: var(--tinta-2); }
+  .barra.real-marca .nombre { font-weight: 600; }
+  .nota { color: var(--tinta-3); font-size: 12px; margin-top: 12px; }
+  .error-carga { color: var(--mal); }
+
+  footer { color: var(--tinta-3); font-size: 13px; padding-top: 28px; padding-bottom: 28px; }
+  footer a { color: inherit; }
+
+  @media (max-width: 900px) {
+    .cuerpo { grid-template-columns: 1fr; }
+    .detalle { position: static; order: -1; }
+    .etiqueta { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Clasificador de residuos</h1>
+  <p class="sub" id="sub">Cargando…</p>
+</header>
+
+<main>
+  <section class="subir" id="subir" aria-label="Probar con una foto propia">
+    <label class="boton principal">
+      Probar con tu foto
+      <input type="file" id="archivo" accept="image/*">
+    </label>
+    <p>Elige o arrastra una foto (en el celular puedes usar la cámara). Se clasifica en tu
+      navegador con el mismo modelo; la foto no se sube a ningún lado.</p>
+  </section>
+
+  <section class="filtros" aria-label="Filtros">
+    <div class="fila" role="group" aria-label="Evaluar por">
+      <span class="etiqueta">Evaluar por</span><span id="f-modo" class="fila"></span>
+    </div>
+    <div class="fila" role="group" aria-label="Contenedor">
+      <span class="etiqueta">Contenedor</span><span id="f-contenedor" class="fila"></span>
+    </div>
+    <div class="fila" role="group" aria-label="Clase">
+      <span class="etiqueta">Clase</span><span id="f-clase" class="fila"></span>
+    </div>
+    <div class="fila" role="group" aria-label="Mostrar">
+      <span class="etiqueta">Mostrar</span><span id="f-resultado" class="fila"></span>
+    </div>
+  </section>
+
+  <div class="acciones">
+    <button id="otras" type="button">Otras fotos</button>
+    <span class="resumen" id="resumen" aria-live="polite"></span>
+  </div>
+
+  <div class="cuerpo">
+    <section class="rejilla" id="rejilla" aria-label="Fotos"></section>
+    <aside class="detalle" id="detalle" aria-live="polite">
+      <p class="vacio">Elige una foto para ver qué respondió el modelo.</p>
+    </aside>
+  </div>
+</main>
+
+<footer id="pie"></footer>
+
+<script type="module">
+const POR_PAGINA = 24;
+const LITERT = "https://cdn.jsdelivr.net/npm/@litertjs/core@2.6.0";
+const NOMBRES = {
+  battery: "Batería", biological: "Biológico", cardboard: "Cartón",
+  glass: "Vidrio", metal: "Metal", paper: "Papel", plastic: "Plástico",
+  trash: "Basura",
+};
+const CONTENEDORES = [
+  { id: "organico", nombre: "Orgánico", corto: "Orgánico", color: "var(--organico)" },
+  { id: "inorganico_reciclable", nombre: "Inorgánico reciclable", corto: "Reciclable", color: "var(--reciclable)" },
+  { id: "inorganico_no_reciclable", nombre: "Inorgánico no reciclable", corto: "No reciclable", color: "var(--no-reciclable)" },
+];
+const contenedor = id => CONTENEDORES.find(c => c.id === id);
+
+let datos, fotos = [];
+const estado = {
+  modo: "contenedor", contenedor: null, clase: null, resultado: "todas",
+  muestra: [], elegida: null,
+};
+
+// ---------------------------------------------------------------- utilidades
+function el(etiqueta, atributos = {}, ...hijos) {
+  const n = document.createElement(etiqueta);
+  for (const [k, v] of Object.entries(atributos)) {
+    if (k === "class") n.className = v;
+    else if (k === "style") n.style.cssText = v;
+    else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+    else n.setAttribute(k, v);
+  }
+  for (const h of hijos) if (h != null) n.append(h);
+  return n;
+}
+const pct = p => (p * 100).toFixed(p >= 0.995 || p < 0.001 ? 0 : 1) + " %";
+const punto = color => el("span", { class: "punto", style: `background:${color}`, "aria-hidden": "true" });
+const nombre = i => NOMBRES[datos.clases[i]];
+const contDe = i => datos.contenedores[datos.clases[i]];
+const argmax = a => a.indexOf(Math.max(...a));
+
+// Acierto según el modo: misma clase, o mismo contenedor.
+const acierta = (pred, real) =>
+  estado.modo === "clase" ? pred === real : contDe(pred) === contDe(real);
+const etiquetaDe = i =>
+  estado.modo === "clase" ? nombre(i) : contenedor(contDe(i)).corto;
+
+function boton(texto, activo, alHacerClic, extra = {}) {
+  const { color, cuenta } = extra;
+  return el("button", { type: "button", "aria-pressed": String(activo), onclick: alHacerClic },
+    color ? punto(color) : null, texto,
+    cuenta != null ? el("span", { class: "cuenta" }, String(cuenta)) : null);
+}
+
+// ---------------------------------------------------------------- filtros
+function base() {
+  return fotos.filter(f =>
+    (!estado.contenedor || contDe(f.real) === estado.contenedor) &&
+    (estado.clase == null || f.real === estado.clase));
+}
+function filtradas() {
+  const b = base();
+  if (estado.resultado === "aciertos") return b.filter(f => acierta(f.pred, f.real));
+  if (estado.resultado === "errores") return b.filter(f => !acierta(f.pred, f.real));
+  return b;
+}
+function barajar() {
+  const lista = filtradas().slice();
+  for (let i = lista.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [lista[i], lista[j]] = [lista[j], lista[i]];
+  }
+  estado.muestra = lista.slice(0, POR_PAGINA);
+}
+
+function pintarFiltros() {
+  document.getElementById("f-modo").replaceChildren(
+    boton("Contenedor", estado.modo === "contenedor", () => elegirModo("contenedor")),
+    boton("Clase", estado.modo === "clase", () => elegirModo("clase")));
+
+  document.getElementById("f-contenedor").replaceChildren(
+    boton("Todos", !estado.contenedor, () => elegirContenedor(null), { cuenta: fotos.length }),
+    ...CONTENEDORES.map(c => boton(c.nombre, estado.contenedor === c.id, () => elegirContenedor(c.id),
+      { color: c.color, cuenta: fotos.filter(f => contDe(f.real) === c.id).length })));
+
+  const orden = id => CONTENEDORES.findIndex(c => c.id === id);
+  const clases = datos.clases.map((_, i) => i)
+    .filter(i => !estado.contenedor || contDe(i) === estado.contenedor)
+    .sort((a, b) => orden(contDe(a)) - orden(contDe(b)) || nombre(a).localeCompare(nombre(b), "es"));
+  document.getElementById("f-clase").replaceChildren(
+    boton("Todas", estado.clase == null, () => elegirClase(null)),
+    ...clases.map(i => boton(nombre(i), estado.clase === i, () => elegirClase(i),
+      { color: contenedor(contDe(i)).color, cuenta: fotos.filter(f => f.real === i).length })));
+
+  const b = base(), errores = b.filter(f => !acierta(f.pred, f.real)).length;
+  document.getElementById("f-resultado").replaceChildren(
+    boton("Todas", estado.resultado === "todas", () => elegirResultado("todas"), { cuenta: b.length }),
+    boton("Aciertos", estado.resultado === "aciertos", () => elegirResultado("aciertos"), { cuenta: b.length - errores }),
+    boton("Errores", estado.resultado === "errores", () => elegirResultado("errores"), { cuenta: errores }));
+
+  const n = b.length;
+  const okClase = b.filter(f => f.pred === f.real).length;
+  const okCont = b.filter(f => contDe(f.pred) === contDe(f.real)).length;
+  const resumen = document.getElementById("resumen");
+  resumen.replaceChildren();
+  if (!n) return;
+  const cont = `contenedor correcto en ${pct(okCont / n)}`, clase = `clase correcta en ${pct(okClase / n)}`;
+  resumen.append("Con estos filtros: ", el("b", {}, `${n} fotos`), " · ",
+    ...(estado.modo === "contenedor"
+      ? [el("b", {}, cont), " · ", clase]
+      : [el("b", {}, clase), " · ", cont]));
+}
+
+// ---------------------------------------------------------------- rejilla
+function pintarRejilla() {
+  const r = document.getElementById("rejilla");
+  if (!estado.muestra.length) {
+    r.replaceChildren(el("p", { class: "vacio" }, "No hay fotos con estos filtros."));
+    return;
+  }
+  r.replaceChildren(...estado.muestra.map(f => {
+    const ok = acierta(f.pred, f.real);
+    return el("button", {
+      type: "button", class: "foto", "aria-pressed": String(estado.elegida === f),
+      "aria-label": `${ok ? "Acierto" : "Error"}: foto de ${nombre(f.real)}, el modelo dijo ${nombre(f.pred)}`,
+      onclick: () => elegirFoto(f),
+    },
+      el("img", { src: f.ruta, alt: "", loading: "lazy" }),
+      el("span", { class: "pie" },
+        el("span", {}, el("span", { class: "estado " + (ok ? "bien" : "mal") }, ok ? "Acierto" : "Error"),
+          " · ", etiquetaDe(f.pred)),
+        el("span", { class: "real" }, `Real: ${etiquetaDe(f.real)}`)));
+  }));
+}
+
+// ---------------------------------------------------------------- detalle
+function veredicto(pred, real) {
+  const cP = contenedor(contDe(pred)), cR = contenedor(contDe(real));
+  const mismaClase = pred === real, mismoCont = cP === cR;
+  const ok = acierta(pred, real);
+  const marca = el("span", { class: "estado " + (ok ? "bien" : "mal") }, ok ? "Acierto" : "Error");
+  let texto;
+  if (mismaClase) texto = `: clase y contenedor correctos (${cP.nombre.toLowerCase()}).`;
+  else if (mismoCont) texto = estado.modo === "contenedor"
+    ? `: va al contenedor correcto (${cP.nombre.toLowerCase()}), aunque la clase es ${nombre(pred).toLowerCase()} y no ${nombre(real).toLowerCase()}.`
+    : `: la clase es ${nombre(pred).toLowerCase()} y no ${nombre(real).toLowerCase()}, aunque el contenedor (${cP.nombre.toLowerCase()}) es el correcto.`;
+  else texto = `: iría a ${cP.nombre.toLowerCase()} en lugar de ${cR.nombre.toLowerCase()}.`;
+  return el("div", { class: "veredicto" }, marca, texto);
+}
+
+function barras(probs, real) {
+  const orden = probs.map((p, i) => [p, i]).sort((a, b) => b[0] - a[0]);
+  return el("div", { class: "barras", role: "list", "aria-label": "Probabilidad de cada clase" },
+    ...orden.map(([p, i]) => el("div", { class: "barra" + (i === real ? " real-marca" : ""), role: "listitem" },
+      el("span", { class: "nombre" }, nombre(i) + (i === real ? " (real)" : "")),
+      el("span", { class: "riel" },
+        el("span", { class: "valor", style: `width:${(p * 100).toFixed(2)}%;background:${contenedor(contDe(i)).color}` })),
+      el("span", { class: "pct" }, pct(p)))));
+}
+
+function pintarDetalle() {
+  const d = document.getElementById("detalle");
+  if (estado.elegida?.subida) return pintarSubida();
+  const f = estado.elegida;
+  if (!f) {
+    d.replaceChildren(el("p", { class: "vacio" }, "Elige una foto para ver qué respondió el modelo."));
+    return;
+  }
+  const cReal = contenedor(contDe(f.real)), cPred = contenedor(contDe(f.pred));
+  d.replaceChildren(
+    el("img", { src: f.ruta, alt: `Foto de ${nombre(f.real)}` }),
+    el("h2", {}, `${nombre(f.pred)} · ${pct(f.probs[f.pred])}`),
+    el("div", { class: "linea" }, punto(cPred.color), `Predicción: ${nombre(f.pred)} (${datos.clases[f.pred]}) → ${cPred.nombre}`),
+    el("div", { class: "linea" }, punto(cReal.color), `Real: ${nombre(f.real)} (${datos.clases[f.real]}) → ${cReal.nombre}`),
+    veredicto(f.pred, f.real),
+    barras(f.probs, f.real),
+    el("p", { class: "nota" }, "El color de cada barra es el contenedor de esa clase. " +
+      "El modelo clasificó la foto original; aquí se muestra una miniatura."));
+}
+
+// ---------------------------------------------------------------- foto propia
+// El modelo se carga solo la primera vez que alguien sube una foto.
+let cargaModelo = null;
+function cargarModelo() {
+  cargaModelo ??= (async () => {
+    const lrt = await import(`${LITERT}/+esm`);
+    await lrt.loadLiteRt(`${LITERT}/wasm/`);
+    const modelo = await lrt.loadAndCompile(new URL("modelo.tflite", location.href).href,
+                                            { accelerator: "wasm" });
+    return { lrt, modelo };
+  })();
+  cargaModelo.catch(() => { cargaModelo = null; });
+  return cargaModelo;
+}
+
+// Redimensionado bilineal con antialias igual al de Pillow
+// (Image.resize(..., Image.BILINEAR), el que usa src/inferir.py): filtro
+// triangular que se ensancha al reducir, primero en horizontal y luego en
+// vertical, redondeando a 0-255 en cada pasada.
+function coeficientes(entrada, salida) {
+  const escala = entrada / salida, fs = Math.max(escala, 1);
+  const lista = [];
+  for (let s = 0; s < salida; s++) {
+    const centro = (s + 0.5) * escala;
+    const ini = Math.max(Math.trunc(centro - fs + 0.5), 0);
+    const fin = Math.min(Math.trunc(centro + fs + 0.5), entrada);
+    const pesos = [];
+    let suma = 0;
+    for (let x = ini; x < fin; x++) {
+      const t = Math.abs((x - centro + 0.5) / fs);
+      const w = t < 1 ? 1 - t : 0;
+      pesos.push(w); suma += w;
+    }
+    lista.push({ ini, pesos: pesos.map(w => (suma ? w / suma : 0)) });
+  }
+  return lista;
+}
+const a8 = v => (v < 0 ? 0 : v > 255 ? 255 : Math.round(v));
+
+function prepararEntrada(rgba, ancho, alto, an, al) {
+  const ch = coeficientes(ancho, an), cv = coeficientes(alto, al);
+  const tmp = new Uint8Array(an * alto * 3);
+  for (let y = 0; y < alto; y++) {
+    for (let x = 0; x < an; x++) {
+      const { ini, pesos } = ch[x];
+      let r = 0, g = 0, b = 0;
+      for (let k = 0; k < pesos.length; k++) {
+        const o = (y * ancho + ini + k) * 4, w = pesos[k];
+        r += rgba[o] * w; g += rgba[o + 1] * w; b += rgba[o + 2] * w;
+      }
+      const d = (y * an + x) * 3;
+      tmp[d] = a8(r); tmp[d + 1] = a8(g); tmp[d + 2] = a8(b);
+    }
+  }
+  const salida = new Float32Array(an * al * 3);  // RGB 0-255, SIN dividir entre 255
+  for (let y = 0; y < al; y++) {
+    const { ini, pesos } = cv[y];
+    for (let x = 0; x < an; x++) {
+      let r = 0, g = 0, b = 0;
+      for (let k = 0; k < pesos.length; k++) {
+        const o = ((ini + k) * an + x) * 3, w = pesos[k];
+        r += tmp[o] * w; g += tmp[o + 1] * w; b += tmp[o + 2] * w;
+      }
+      const d = (y * an + x) * 3;
+      salida[d] = a8(r); salida[d + 1] = a8(g); salida[d + 2] = a8(b);
+    }
+  }
+  return salida;
+}
+
+async function pixeles(fuente) {
+  const bmp = await createImageBitmap(fuente);
+  const lienzo = new OffscreenCanvas(bmp.width, bmp.height);
+  const ctx = lienzo.getContext("2d", { willReadFrequently: true });
+  ctx.drawImage(bmp, 0, 0);
+  const { data } = ctx.getImageData(0, 0, bmp.width, bmp.height);
+  const res = { rgba: data, ancho: bmp.width, alto: bmp.height };
+  bmp.close();
+  return res;
+}
+
+async function clasificarEnVivo(fuente) {
+  const { lrt, modelo } = await cargarModelo();
+  const t0 = performance.now();
+  const { rgba, ancho, alto } = await pixeles(fuente);
+  const { ancho: an, alto: al } = datos.entrada;
+  const x = prepararEntrada(rgba, ancho, alto, an, al);
+  const entrada = new lrt.Tensor(x, [1, al, an, 3]);
+  const salidas = await modelo.run(entrada);
+  const probs = Array.from(await salidas[0].data());
+  entrada.delete();
+  salidas.forEach(s => s.delete());
+  return { probs, ms: performance.now() - t0 };
+}
+
+function pintarSubida() {
+  const s = estado.elegida, d = document.getElementById("detalle");
+  const hijos = [el("img", { src: s.url, alt: "Tu foto" }), el("span", { class: "etiqueta-vivo" }, "Tu foto · en vivo")];
+  if (s.error) {
+    hijos.push(el("p", { class: "error-carga" }, `No se pudo clasificar: ${s.error}`));
+  } else if (!s.probs) {
+    hijos.push(el("p", { class: "vacio", style: "padding:16px 0" },
+      s.cargado ? "Clasificando…" : "Cargando el modelo (unos 18 MB, solo la primera vez)…"));
+  } else {
+    const pred = argmax(s.probs), cPred = contenedor(contDe(pred));
+    const selector = el("select", { "aria-label": "Qué es en realidad", onchange: e => {
+      s.real = e.target.value === "" ? null : Number(e.target.value); pintarSubida();
+    } }, el("option", { value: "" }, "No lo indico"),
+      ...datos.clases.map((_, i) => el("option", { value: String(i) }, nombre(i))));
+    selector.value = s.real == null ? "" : String(s.real);
+    hijos.push(
+      el("h2", {}, `${nombre(pred)} · ${pct(s.probs[pred])}`),
+      el("div", { class: "linea" }, punto(cPred.color), `Predicción: ${nombre(pred)} (${datos.clases[pred]}) → ${cPred.nombre}`),
+      el("div", { class: "linea" }, "¿Qué es en realidad?", selector),
+      s.real != null ? veredicto(pred, s.real) : null,
+      barras(s.probs, s.real),
+      el("p", { class: "nota" }, `Clasificada en tu navegador con LiteRT.js en ${Math.round(s.ms)} ms. ` +
+        "Se prepara igual que en src/inferir.py: RGB, 224×224 bilineal, valores 0-255 sin dividir entre 255."));
+  }
+  d.replaceChildren(...hijos.filter(Boolean));
+}
+
+async function probarArchivo(archivo) {
+  if (!archivo || !archivo.type.startsWith("image/")) return;
+  if (estado.elegida?.subida) URL.revokeObjectURL(estado.elegida.url);
+  const s = { subida: true, url: URL.createObjectURL(archivo), real: null };
+  estado.elegida = s;
+  pintarRejilla(); pintarSubida();
+  document.getElementById("detalle").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  try {
+    await cargarModelo();
+    s.cargado = true; pintarSubida();
+    Object.assign(s, await clasificarEnVivo(archivo));
+  } catch (e) {
+    console.error(e);
+    s.error = e?.message || String(e);
+  }
+  if (estado.elegida === s) pintarSubida();
+}
+
+const zona = document.getElementById("subir");
+document.getElementById("archivo").addEventListener("change", e => probarArchivo(e.target.files[0]));
+for (const ev of ["dragenter", "dragover"]) zona.addEventListener(ev, e => { e.preventDefault(); zona.classList.add("arrastrando"); });
+for (const ev of ["dragleave", "drop"]) zona.addEventListener(ev, () => zona.classList.remove("arrastrando"));
+zona.addEventListener("drop", e => { e.preventDefault(); probarArchivo(e.dataTransfer.files[0]); });
+
+// ---------------------------------------------------------------- estado y URL
+function guardarEnUrl() {
+  const q = new URLSearchParams();
+  if (estado.modo !== "contenedor") q.set("evaluar", estado.modo);
+  if (estado.contenedor) q.set("contenedor", estado.contenedor);
+  if (estado.clase != null) q.set("clase", datos.clases[estado.clase]);
+  if (estado.resultado !== "todas") q.set("mostrar", estado.resultado);
+  history.replaceState(null, "", q.toString() ? "#" + q : location.pathname);
+}
+function leerDeUrl() {
+  const q = new URLSearchParams(location.hash.slice(1));
+  const c = q.get("contenedor"), cl = datos.clases.indexOf(q.get("clase")), m = q.get("mostrar");
+  if (q.get("evaluar") === "clase") estado.modo = "clase";
+  if (contenedor(c)) estado.contenedor = c;
+  if (cl >= 0) { estado.clase = cl; estado.contenedor = contDe(cl); }
+  if (["aciertos", "errores"].includes(m)) estado.resultado = m;
+  return q;
+}
+
+function refrescar(nuevaMuestra = true) {
+  if (nuevaMuestra) barajar();
+  guardarEnUrl();
+  if (estado.elegida && !estado.elegida.subida && !filtradas().includes(estado.elegida)) estado.elegida = null;
+  if (!estado.elegida) estado.elegida = estado.muestra[0] || null;
+  pintarFiltros(); pintarRejilla(); pintarDetalle();
+}
+function soltarSubida() { if (estado.elegida?.subida) estado.elegida = null; }
+function elegirModo(m) { estado.modo = m; soltarSubida(); refrescar(estado.resultado !== "todas"); }
+function elegirContenedor(id) { estado.contenedor = id; estado.clase = null; estado.elegida = null; refrescar(); }
+function elegirClase(i) { estado.clase = i; estado.elegida = null; refrescar(); }
+function elegirResultado(r) { estado.resultado = r; estado.elegida = null; refrescar(); }
+function elegirFoto(f) { estado.elegida = f; pintarRejilla(); pintarDetalle(); }
+document.getElementById("otras").addEventListener("click", () => { estado.elegida = null; refrescar(); });
+
+// Verificación interna: #autoprueba=N clasifica en el navegador las primeras
+// N miniaturas y deja las probabilidades en <pre id="autoprueba">, para
+// compararlas con las de src/inferir.py sobre los mismos archivos.
+async function autoprueba(n) {
+  const salida = el("pre", { id: "autoprueba" }, "corriendo");
+  document.body.append(salida);
+  try {
+    const res = [];
+    for (const f of fotos.slice(0, n)) {
+      const blob = await (await fetch(f.ruta)).blob();
+      const { probs, ms } = await clasificarEnVivo(blob);
+      res.push({ ruta: f.ruta, probs: probs.map(p => +p.toFixed(5)), ms: Math.round(ms) });
+    }
+    salida.textContent = JSON.stringify(res);
+  } catch (e) {
+    salida.textContent = "ERROR " + (e?.stack || e);
+  }
+}
+
+fetch("datos.json").then(r => r.json()).then(d => {
+  datos = d;
+  fotos = d.fotos.map(f => ({ ...f, pred: argmax(f.probs) }));
+  const q = leerDeUrl();
+  const particion = d.particion === "test" ? "de test, que el modelo no vio al entrenar" : `de ${d.particion}`;
+  document.getElementById("sub").textContent =
+    `${fotos.length} fotos ${particion}, clasificadas por el modelo final ` +
+    `(MobileNetV3Large en TFLite ${d.modelo.cuantizacion ?? ""}). ` +
+    `Manda al contenedor correcto el ${pct(d.accuracy_contenedor)} y acierta la clase en el ${pct(d.accuracy)}.`;
+  const pie = document.getElementById("pie");
+  pie.append(`Generado por GitHub Actions el ${d.generado}`);
+  if (d.repositorio) {
+    pie.append(" desde ", el("a", { href: `https://github.com/${d.repositorio}/commit/${d.commit}` }, d.commit),
+      " · ", el("a", { href: `https://github.com/${d.repositorio}` }, "código en GitHub"));
+  }
+  pie.append(". Fotos: Garbage Classification V2 (Suman Kunwar, Kaggle, licencia MIT).");
+  refrescar();
+  if (q.has("autoprueba")) autoprueba(Number(q.get("autoprueba")) || 20);
+}).catch(() => {
+  document.getElementById("sub").textContent = "No se pudo cargar datos.json.";
+});
+</script>
+</body>
+</html>

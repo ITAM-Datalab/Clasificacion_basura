@@ -1,0 +1,16 @@
+{
+  "n_imagenes": 1865,
+  "accuracy": 0.9469,
+  "f1_macro": 0.9459,
+  "mcc": 0.9377,
+  "contenedor": {
+    "accuracy": 0.9828,
+    "f1_macro": 0.9732,
+    "mcc": 0.9548,
+    "f1_por_contenedor": {
+      "inorganico_no_reciclable": 0.9464,
+      "inorganico_reciclable": 0.9899,
+      "organico": 0.9834
+    }
+  }
+}

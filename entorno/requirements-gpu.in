@@ -1,0 +1,5 @@
+# Entrada para generar requirements-gpu.lock (Linux / WSL2 con GPU NVIDIA).
+# Mismas librerías que requirements.txt, con TensorFlow y las librerías de
+# CUDA instaladas por pip (no hace falta instalar CUDA en el sistema).
+-r ../requirements.txt
+tensorflow[and-cuda]==2.21.0

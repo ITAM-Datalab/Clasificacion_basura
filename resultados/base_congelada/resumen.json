@@ -1,0 +1,14 @@
+{
+  "red": "MobileNetV3Large",
+  "epocas_corridas": 8,
+  "epocas_maximas": 50,
+  "paciencia": 4,
+  "paro_por_early_stopping": true,
+  "mejor_epoca": 4,
+  "mejor_val_loss": 0.2298,
+  "val_accuracy_mejor_epoca": 0.9217,
+  "train_loss_mejor_epoca": 0.342,
+  "min_entrenamiento": 2.4,
+  "lr": 0.001,
+  "batch": 32
+}

@@ -132,10 +132,18 @@ def descongelar_ultimas(modelo: keras.Model, n_capas: int,
     compilar(modelo, lr)
 
 
-def callbacks(ruta_modelo: str, paciencia: int = 5) -> list:
+def callbacks(ruta_modelo: str, paciencia: int = 5,
+              umbral_inicial: float | None = None) -> list:
+    """Early stopping y checkpoint sobre val_loss.
+
+    `umbral_inicial`: el checkpoint solo se guarda si val_loss baja de este
+    valor. En el fine-tuning se pasa el val_loss del modelo de partida, para
+    no guardar un modelo peor que el que ya teníamos.
+    """
     return [
         keras.callbacks.EarlyStopping(monitor="val_loss", patience=paciencia,
                                       restore_best_weights=True),
         keras.callbacks.ModelCheckpoint(ruta_modelo, monitor="val_loss",
-                                        save_best_only=True),
+                                        save_best_only=True,
+                                        initial_value_threshold=umbral_inicial),
     ]
