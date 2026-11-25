@@ -100,6 +100,23 @@ El script:
 
 Correrlo dos veces con el mismo zip da exactamente el mismo `splits.csv`.
 
+Distribución de clases (12,428 imágenes; train 8,699, val 1,864 y test 1,865).
+Al estratificar, cada partición tiene los mismos porcentajes que el total:
+
+| Clase | Contenedor | Imágenes | % |
+|---|---|---:|---:|
+| glass | inorgánico reciclable | 3,054 | 24.6 |
+| plastic | inorgánico reciclable | 1,976 | 15.9 |
+| cardboard | inorgánico reciclable | 1,824 | 14.7 |
+| paper | inorgánico reciclable | 1,678 | 13.5 |
+| metal | inorgánico reciclable | 1,016 | 8.2 |
+| biological | orgánico | 997 | 8.0 |
+| battery | inorgánico no reciclable | 944 | 7.6 |
+| trash | inorgánico no reciclable | 939 | 7.6 |
+
+Por contenedor: reciclable 76.8 %, no reciclable 15.2 % y orgánico 8.0 %. El
+desbalance se compensa con `class_weights.json` al entrenar.
+
 En Colab: clona el repo, sube el zip a `Datasets/` (o enlázalo desde Drive) y
 corre `!python src/preparar_datos.py`.
 
@@ -242,6 +259,18 @@ requieren manejo especial.
 
 ![Matriz de confusión de 8 clases en test](resultados/fine_tuning/matriz_confusion_test.png)
 ![Matriz de confusión de 3 contenedores en test](resultados/fine_tuning/matriz_confusion_contenedor_test.png)
+
+### Limitaciones
+
+- **El modelo comete errores.** En test, 32 de 1,865 fotos (1.7 %) van al
+  contenedor equivocado.
+- **El análisis depende bastante del fondo.** Las fotos del dataset vienen de
+  internet, con fondos y encuadres muy distintos a los que verá la cámara del
+  módulo. Las cifras de arriba no garantizan el mismo desempeño en el bote.
+- **Hay que revisar con cuidado la contaminación cruzada**, en especial
+  orgánicos que terminen en inorgánicos reciclables. En test ningún orgánico
+  se fue a reciclables (2 reciclables se predijeron como orgánicos), pero hay
+  que confirmarlo con fotos reales tomadas en el módulo.
 
 ## Exportar a TFLite e inferencia
 
